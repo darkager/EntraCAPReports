@@ -148,7 +148,6 @@ $result.Policies | Where-Object { $_.Classification -eq 'BlockPolicy' }
 
 | Column | Description |
 |--------|-------------|
-| PolicyId | Policy GUID |
 | DisplayName | Policy name |
 | State | enabled, disabled, enabledForReportingButNotEnforced |
 | Classification | Primary intent pattern |
@@ -163,6 +162,7 @@ $result.Policies | Where-Object { $_.Classification -eq 'BlockPolicy' }
 | SessionControls | Human-readable session controls summary |
 | CreatedDateTime | When the policy was created |
 | ModifiedDateTime | When the policy was last modified |
+| PolicyId | Policy GUID |
 
 ### Detail Report Columns
 
@@ -284,6 +284,11 @@ For large tenants with many policies, the first run may take longer while caches
 ---
 
 ## Changelog
+
+### v0.2.0 (2026-01-05)
+
+- Fixed `Export-CAPReport` failing when `-PolicyId` not specified
+- Reordered summary report columns (DisplayName first, PolicyId last)
 
 ### v0.1.0 (2026-01-04)
 

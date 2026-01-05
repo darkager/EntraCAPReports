@@ -1,9 +1,9 @@
 @{
     RootModule           = 'EntraCAPReports.psm1'
-    ModuleVersion        = '0.1.0'
+    ModuleVersion        = '0.2.0'
     CompatiblePSEditions = @('Desktop', 'Core')
     PowerShellVersion    = '5.1'
-    GUID                 = 'a3b8c5d2-4e6f-4a8b-9c1d-2e3f4a5b6c7d'
+    GUID                 = 'da156b6d-7191-4e7a-9999-8436a372c214'
     Author               = 'Your Name'
     CompanyName          = 'Your Company'
     Copyright            = '(c) 2026. All rights reserved.'
@@ -31,7 +31,11 @@
             LicenseUri   = ''
             ProjectUri   = ''
             ReleaseNotes = @'
-## 0.1.0 (2026-01-02)
+## 0.2.0 (2026-01-05)
+- Fixed Export-CAPReport failing when PolicyId not specified
+- Reordered summary report columns (DisplayName first, PolicyId last)
+
+## 0.1.0 (2026-01-04)
 - Initial release
 - Get-ConditionalAccessPolicy: Retrieve CAPs with resolved names
 - Export-CAPReport: Generate summary and detail CSV reports
