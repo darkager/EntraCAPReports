@@ -1,0 +1,46 @@
+# PowerShell Module Development
+*.psm1-help.xml
+
+# Build output
+/out/
+/output/
+/release/
+
+# Test results
+/TestResults/
+*.TestResults.xml
+coverage.xml
+
+# IDE and Editor
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Temp files
+*.tmp
+*.temp
+*~
+*.bak
+*.swp
+
+# Logs
+*.log
+
+# Local data/exports (don't commit report outputs)
+_data/
+*.csv
