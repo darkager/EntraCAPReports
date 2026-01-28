@@ -1,4 +1,4 @@
-function Get-ConditionalAccessPolicy {
+function Get-EntraConditionalAccessPolicy {
     <#
     .SYNOPSIS
         Retrieves Conditional Access Policies with resolved names and classification.
@@ -20,17 +20,17 @@ function Get-ConditionalAccessPolicy {
         Parent progress bar ID for nested progress reporting.
 
     .EXAMPLE
-        Get-ConditionalAccessPolicy
+        Get-EntraConditionalAccessPolicy
 
         Retrieves all Conditional Access Policies with resolved names.
 
     .EXAMPLE
-        Get-ConditionalAccessPolicy -PolicyId 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+        Get-EntraConditionalAccessPolicy -PolicyId 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
 
         Retrieves a specific policy by ID.
 
     .EXAMPLE
-        Get-ConditionalAccessPolicy -ResolveNames $false
+        Get-EntraConditionalAccessPolicy -ResolveNames $false
 
         Retrieves all policies without resolving GUIDs (faster).
 
@@ -57,7 +57,7 @@ function Get-ConditionalAccessPolicy {
     )
 
     begin {
-        Write-Verbose -Message 'Starting Get-ConditionalAccessPolicy'
+        Write-Verbose -Message 'Starting Get-EntraConditionalAccessPolicy'
 
         $results = New-Object -TypeName 'System.Collections.Generic.List[PSCustomObject]'
         $progressId = if ($ProgressParentId -ge 0) { $ProgressParentId + 1 } else { 0 }
@@ -125,6 +125,8 @@ function Get-ConditionalAccessPolicy {
                 $resolvedExcludeApps = @()
                 $resolvedIncludeLocations = @()
                 $resolvedExcludeLocations = @()
+                $expandedIncludeLocations = @()
+                $expandedExcludeLocations = @()
                 $resolvedUserActions = @()
                 $resolvedAuthContexts = @()
                 $resolvedIncludeGuests = $null
@@ -175,9 +177,11 @@ function Get-ConditionalAccessPolicy {
                     # Resolve locations
                     $locationsResult = Resolve-CAPLocations -LocationIds $conditions.Locations.IncludeLocations
                     $resolvedIncludeLocations = $locationsResult.Details
+                    $expandedIncludeLocations = $locationsResult.ExpandedDetails
 
                     $locationsExcludeResult = Resolve-CAPLocations -LocationIds $conditions.Locations.ExcludeLocations
                     $resolvedExcludeLocations = $locationsExcludeResult.Details
+                    $expandedExcludeLocations = $locationsExcludeResult.ExpandedDetails
 
                     # Resolve authentication strength
                     if ($null -ne $grantControls.AuthenticationStrength) {
@@ -243,6 +247,7 @@ function Get-ConditionalAccessPolicy {
                     # Policy metadata
                     PolicyId                         = $policy.Id
                     DisplayName                      = $policy.DisplayName
+                    Description                      = $policy.Description
                     State                            = $policy.State
                     CreatedDateTime                  = $policy.CreatedDateTime
                     ModifiedDateTime                 = $policy.ModifiedDateTime
@@ -297,6 +302,10 @@ function Get-ConditionalAccessPolicy {
                     UserRiskLevels                   = $conditions.UserRiskLevels -join '; '
                     ServicePrincipalRiskLevels       = $conditions.ServicePrincipalRiskLevels -join '; '
                     InsiderRiskLevels                = $conditions.InsiderRiskLevels
+                    AuthenticationFlowsTransferMethods = $conditions.AuthenticationFlows.TransferMethods -join '; '
+                    ClientApplicationsIncludeServicePrincipals = $conditions.ClientApplications.IncludeServicePrincipals -join '; '
+                    ClientApplicationsExcludeServicePrincipals = $conditions.ClientApplications.ExcludeServicePrincipals -join '; '
+                    ClientApplicationsServicePrincipalFilter = $conditions.ClientApplications.ServicePrincipalFilter.Rule
                     ConditionsDescription            = $conditionsDescription
 
                     # Grant controls
@@ -318,6 +327,7 @@ function Get-ConditionalAccessPolicy {
                     CloudAppSecurityEnabled          = $sessionControls.CloudAppSecurity.IsEnabled
                     CloudAppSecurityType             = $sessionControls.CloudAppSecurity.CloudAppSecurityType
                     AppEnforcedRestrictionsEnabled   = $sessionControls.ApplicationEnforcedRestrictions.IsEnabled
+                    ContinuousAccessEvaluationMode   = $sessionControls.ContinuousAccessEvaluation.Mode
                     DisableResilienceDefaults        = $sessionControls.DisableResilienceDefaults
                     SessionDescription               = $sessionDescription
 
@@ -332,6 +342,8 @@ function Get-ConditionalAccessPolicy {
                     _ExcludeAppsDetails              = $resolvedExcludeApps
                     _IncludeLocationsDetails         = $resolvedIncludeLocations
                     _ExcludeLocationsDetails         = $resolvedExcludeLocations
+                    _IncludeLocationsExpanded        = $expandedIncludeLocations
+                    _ExcludeLocationsExpanded        = $expandedExcludeLocations
                     _UserActionsDetails              = $resolvedUserActions
                     _AuthContextsDetails             = $resolvedAuthContexts
                 }

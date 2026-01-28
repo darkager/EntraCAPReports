@@ -18,8 +18,9 @@ function Get-CAPClassification {
         Internal function - not exported.
 
         Priority Order (highest to lowest):
-        BlockPolicy > AdminProtection > RiskBased > GuestPolicy > DeviceCompliance >
-        LocationBased > AppSpecific > MFAEnforcement > SessionControl > General
+        BlockPolicy > AdminProtection > WorkloadIdentity > RiskBased > GuestPolicy >
+        DeviceCompliance > LocationBased > AuthenticationFlowRestriction > AppSpecific >
+        MFAEnforcement > SessionControl > General
     #>
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
@@ -44,6 +45,16 @@ function Get-CAPClassification {
         $hasRoles = ($conditions.Users.IncludeRoles -and $conditions.Users.IncludeRoles.Count -gt 0)
         if ($hasRoles) {
             $classifications.Add('AdminProtection')
+        }
+
+        # Check for WorkloadIdentity (targets service principals / workload identities)
+        $hasClientApps = ($null -ne $conditions.ClientApplications)
+        $hasIncludeSPs = ($hasClientApps -and $conditions.ClientApplications.IncludeServicePrincipals -and
+            $conditions.ClientApplications.IncludeServicePrincipals.Count -gt 0)
+        $hasSpFilter = ($hasClientApps -and $null -ne $conditions.ClientApplications.ServicePrincipalFilter -and
+            $null -ne $conditions.ClientApplications.ServicePrincipalFilter.Rule)
+        if ($hasIncludeSPs -or $hasSpFilter) {
+            $classifications.Add('WorkloadIdentity')
         }
 
         # Check for RiskBased (has risk level conditions)
@@ -78,6 +89,14 @@ function Get-CAPClassification {
             $conditions.Locations.ExcludeLocations.Count -gt 0)
         if ($hasLocationInclude -or $hasLocationExclude) {
             $classifications.Add('LocationBased')
+        }
+
+        # Check for AuthenticationFlowRestriction (blocks device code flow or auth transfer)
+        $hasAuthFlows = ($null -ne $conditions.AuthenticationFlows -and
+            $conditions.AuthenticationFlows.TransferMethods -and
+            $conditions.AuthenticationFlows.TransferMethods.Count -gt 0)
+        if ($hasAuthFlows) {
+            $classifications.Add('AuthenticationFlowRestriction')
         }
 
         # Check for AppSpecific (targets specific apps, not All)
@@ -126,10 +145,12 @@ function Get-CAPClassification {
         $priorityOrder = @(
             'BlockPolicy'
             'AdminProtection'
+            'WorkloadIdentity'
             'RiskBased'
             'GuestPolicy'
             'DeviceCompliance'
             'LocationBased'
+            'AuthenticationFlowRestriction'
             'AppSpecific'
             'MFAEnforcement'
             'SessionControl'

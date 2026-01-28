@@ -1,4 +1,4 @@
-function Export-CAPReport {
+function Export-EntraCAPReport {
     <#
     .SYNOPSIS
         Exports Conditional Access Policy reports to CSV.
@@ -35,22 +35,22 @@ function Export-CAPReport {
         If specified, returns the policy objects in addition to exporting CSV.
 
     .EXAMPLE
-        Export-CAPReport
+        Export-EntraCAPReport
 
         Exports all policies to timestamped CSV files in current directory.
 
     .EXAMPLE
-        Export-CAPReport -OutputPath 'C:\Reports\CAP'
+        Export-EntraCAPReport -OutputPath 'C:\Reports\EntraCAP'
 
-        Exports to C:\Reports\CAP-Summary.csv and C:\Reports\CAP-Detail.csv
+        Exports to C:\Reports\EntraCAP-Summary.csv and C:\Reports\EntraCAP-Detail.csv
 
     .EXAMPLE
-        Export-CAPReport -StateFilter Enabled -Flatten
+        Export-EntraCAPReport -StateFilter Enabled -Flatten
 
         Exports only enabled policies with compact detail format.
 
     .EXAMPLE
-        $policies = Export-CAPReport -PassThru
+        $policies = Export-EntraCAPReport -PassThru
         $policies | Where-Object { $PSItem.Classification -eq 'BlockPolicy' }
 
         Exports and returns policies for further filtering.
@@ -88,15 +88,15 @@ function Export-CAPReport {
     )
 
     begin {
-        Write-Verbose -Message 'Starting Export-CAPReport'
+        Write-Verbose -Message 'Starting Export-EntraCAPReport'
 
         # Generate output paths
         $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
         if (-not $OutputPath) {
-            $basePath = Join-Path -Path (Get-Location) -ChildPath "CAPReport_$timestamp"
+            $basePath = Join-Path -Path (Get-Location) -ChildPath "EntraCAPReport_$timestamp"
         }
         elseif (Test-Path -Path $OutputPath -PathType Container) {
-            $basePath = Join-Path -Path $OutputPath -ChildPath "CAPReport_$timestamp"
+            $basePath = Join-Path -Path $OutputPath -ChildPath "EntraCAPReport_$timestamp"
         }
         else {
             # Remove any extension if provided
@@ -132,7 +132,7 @@ function Export-CAPReport {
             if ($PolicyId) {
                 $getParams['PolicyId'] = $PolicyId
             }
-            $policies = Get-ConditionalAccessPolicy @getParams
+            $policies = Get-EntraConditionalAccessPolicy @getParams
 
             # Apply state filter
             if ($StateFilter -ne 'All') {
@@ -165,6 +165,7 @@ function Export-CAPReport {
                 # Summary row - DisplayName first, PolicyId near the end
                 $summaryRow = [PSCustomObject]@{
                     DisplayName             = $policy.DisplayName
+                    Description             = $policy.Description
                     State                   = $policy.State
                     Classification          = $policy.Classification
                     AllClassifications      = $policy.AllClassifications
@@ -220,7 +221,6 @@ function Export-CAPReport {
                     foreach ($cat in $categories) {
                         if ($cat.Value) {
                             $detailRow = [PSCustomObject]@{
-                                PolicyId          = $policy.PolicyId
                                 PolicyDisplayName = $policy.DisplayName
                                 State             = $policy.State
                                 Classification    = $policy.Classification
@@ -228,6 +228,7 @@ function Export-CAPReport {
                                 RecordType        = $cat.Type
                                 Direction         = $cat.Direction
                                 Value             = $cat.Value
+                                PolicyId          = $policy.PolicyId
                             }
                             if ($IncludeRawData) {
                                 $detailRow | Add-Member -NotePropertyName 'RawValue' -NotePropertyValue $cat.RawValue
@@ -241,7 +242,6 @@ function Export-CAPReport {
                     # Users
                     foreach ($item in $policy._IncludeUsersDetails) {
                         $detailData.Add([PSCustomObject]@{
-                            PolicyId          = $policy.PolicyId
                             PolicyDisplayName = $policy.DisplayName
                             State             = $policy.State
                             Classification    = $policy.Classification
@@ -250,11 +250,11 @@ function Export-CAPReport {
                             Direction         = 'Include'
                             Value             = $item.DisplayName
                             RawValue          = if ($IncludeRawData) { $item.Id } else { $null }
+                            PolicyId          = $policy.PolicyId
                         })
                     }
                     foreach ($item in $policy._ExcludeUsersDetails) {
                         $detailData.Add([PSCustomObject]@{
-                            PolicyId          = $policy.PolicyId
                             PolicyDisplayName = $policy.DisplayName
                             State             = $policy.State
                             Classification    = $policy.Classification
@@ -263,13 +263,13 @@ function Export-CAPReport {
                             Direction         = 'Exclude'
                             Value             = $item.DisplayName
                             RawValue          = if ($IncludeRawData) { $item.Id } else { $null }
+                            PolicyId          = $policy.PolicyId
                         })
                     }
 
                     # Groups
                     foreach ($item in $policy._IncludeGroupsDetails) {
                         $detailData.Add([PSCustomObject]@{
-                            PolicyId          = $policy.PolicyId
                             PolicyDisplayName = $policy.DisplayName
                             State             = $policy.State
                             Classification    = $policy.Classification
@@ -278,11 +278,11 @@ function Export-CAPReport {
                             Direction         = 'Include'
                             Value             = $item.DisplayName
                             RawValue          = if ($IncludeRawData) { $item.Id } else { $null }
+                            PolicyId          = $policy.PolicyId
                         })
                     }
                     foreach ($item in $policy._ExcludeGroupsDetails) {
                         $detailData.Add([PSCustomObject]@{
-                            PolicyId          = $policy.PolicyId
                             PolicyDisplayName = $policy.DisplayName
                             State             = $policy.State
                             Classification    = $policy.Classification
@@ -291,13 +291,13 @@ function Export-CAPReport {
                             Direction         = 'Exclude'
                             Value             = $item.DisplayName
                             RawValue          = if ($IncludeRawData) { $item.Id } else { $null }
+                            PolicyId          = $policy.PolicyId
                         })
                     }
 
                     # Roles
                     foreach ($item in $policy._IncludeRolesDetails) {
                         $detailData.Add([PSCustomObject]@{
-                            PolicyId          = $policy.PolicyId
                             PolicyDisplayName = $policy.DisplayName
                             State             = $policy.State
                             Classification    = $policy.Classification
@@ -306,11 +306,11 @@ function Export-CAPReport {
                             Direction         = 'Include'
                             Value             = $item.DisplayName
                             RawValue          = if ($IncludeRawData) { $item.Id } else { $null }
+                            PolicyId          = $policy.PolicyId
                         })
                     }
                     foreach ($item in $policy._ExcludeRolesDetails) {
                         $detailData.Add([PSCustomObject]@{
-                            PolicyId          = $policy.PolicyId
                             PolicyDisplayName = $policy.DisplayName
                             State             = $policy.State
                             Classification    = $policy.Classification
@@ -319,13 +319,13 @@ function Export-CAPReport {
                             Direction         = 'Exclude'
                             Value             = $item.DisplayName
                             RawValue          = if ($IncludeRawData) { $item.Id } else { $null }
+                            PolicyId          = $policy.PolicyId
                         })
                     }
 
                     # Applications
                     foreach ($item in $policy._IncludeAppsDetails) {
                         $detailData.Add([PSCustomObject]@{
-                            PolicyId          = $policy.PolicyId
                             PolicyDisplayName = $policy.DisplayName
                             State             = $policy.State
                             Classification    = $policy.Classification
@@ -334,11 +334,11 @@ function Export-CAPReport {
                             Direction         = 'Include'
                             Value             = $item.DisplayName
                             RawValue          = if ($IncludeRawData) { $item.Id } else { $null }
+                            PolicyId          = $policy.PolicyId
                         })
                     }
                     foreach ($item in $policy._ExcludeAppsDetails) {
                         $detailData.Add([PSCustomObject]@{
-                            PolicyId          = $policy.PolicyId
                             PolicyDisplayName = $policy.DisplayName
                             State             = $policy.State
                             Classification    = $policy.Classification
@@ -347,13 +347,13 @@ function Export-CAPReport {
                             Direction         = 'Exclude'
                             Value             = $item.DisplayName
                             RawValue          = if ($IncludeRawData) { $item.Id } else { $null }
+                            PolicyId          = $policy.PolicyId
                         })
                     }
 
                     # User Actions
                     foreach ($item in $policy._UserActionsDetails) {
                         $detailData.Add([PSCustomObject]@{
-                            PolicyId          = $policy.PolicyId
                             PolicyDisplayName = $policy.DisplayName
                             State             = $policy.State
                             Classification    = $policy.Classification
@@ -362,13 +362,13 @@ function Export-CAPReport {
                             Direction         = 'Include'
                             Value             = $item.DisplayName
                             RawValue          = if ($IncludeRawData) { $item.Id } else { $null }
+                            PolicyId          = $policy.PolicyId
                         })
                     }
 
                     # Auth Contexts
                     foreach ($item in $policy._AuthContextsDetails) {
                         $detailData.Add([PSCustomObject]@{
-                            PolicyId          = $policy.PolicyId
                             PolicyDisplayName = $policy.DisplayName
                             State             = $policy.State
                             Classification    = $policy.Classification
@@ -377,34 +377,57 @@ function Export-CAPReport {
                             Direction         = 'Include'
                             Value             = $item.DisplayName
                             RawValue          = if ($IncludeRawData) { $item.Id } else { $null }
+                            PolicyId          = $policy.PolicyId
                         })
                     }
 
-                    # Locations
-                    foreach ($item in $policy._IncludeLocationsDetails) {
+                    # Locations - expanded to show each IP/country with trust status
+                    foreach ($item in $policy._IncludeLocationsExpanded) {
+                        # Format value to include location name, trust status, and IP/country
+                        $trustIndicator = if ($null -eq $item.IsTrusted) { '' }
+                                         elseif ($item.IsTrusted) { ' [Trusted]' }
+                                         else { ' [Not Trusted]' }
+                        $displayValue = if ($item.LocationType -eq 'Special') {
+                            $item.Value
+                        }
+                        else {
+                            "$($item.LocationName)$trustIndicator - $($item.Value)"
+                        }
+
                         $detailData.Add([PSCustomObject]@{
-                            PolicyId          = $policy.PolicyId
                             PolicyDisplayName = $policy.DisplayName
                             State             = $policy.State
                             Classification    = $policy.Classification
                             RecordCategory    = 'Conditions'
-                            RecordType        = 'Location'
+                            RecordType        = "Location ($($item.ValueType))"
                             Direction         = 'Include'
-                            Value             = $item.DisplayName
-                            RawValue          = if ($IncludeRawData) { $item.Id } else { $null }
+                            Value             = $displayValue
+                            RawValue          = if ($IncludeRawData) { $item.LocationId } else { $null }
+                            PolicyId          = $policy.PolicyId
                         })
                     }
-                    foreach ($item in $policy._ExcludeLocationsDetails) {
+                    foreach ($item in $policy._ExcludeLocationsExpanded) {
+                        # Format value to include location name, trust status, and IP/country
+                        $trustIndicator = if ($null -eq $item.IsTrusted) { '' }
+                                         elseif ($item.IsTrusted) { ' [Trusted]' }
+                                         else { ' [Not Trusted]' }
+                        $displayValue = if ($item.LocationType -eq 'Special') {
+                            $item.Value
+                        }
+                        else {
+                            "$($item.LocationName)$trustIndicator - $($item.Value)"
+                        }
+
                         $detailData.Add([PSCustomObject]@{
-                            PolicyId          = $policy.PolicyId
                             PolicyDisplayName = $policy.DisplayName
                             State             = $policy.State
                             Classification    = $policy.Classification
                             RecordCategory    = 'Conditions'
-                            RecordType        = 'Location'
+                            RecordType        = "Location ($($item.ValueType))"
                             Direction         = 'Exclude'
-                            Value             = $item.DisplayName
-                            RawValue          = if ($IncludeRawData) { $item.Id } else { $null }
+                            Value             = $displayValue
+                            RawValue          = if ($IncludeRawData) { $item.LocationId } else { $null }
+                            PolicyId          = $policy.PolicyId
                         })
                     }
 
@@ -413,7 +436,6 @@ function Export-CAPReport {
                         foreach ($platform in ($policy.IncludedPlatforms -split '; ')) {
                             if ($platform) {
                                 $detailData.Add([PSCustomObject]@{
-                                    PolicyId          = $policy.PolicyId
                                     PolicyDisplayName = $policy.DisplayName
                                     State             = $policy.State
                                     Classification    = $policy.Classification
@@ -422,6 +444,7 @@ function Export-CAPReport {
                                     Direction         = 'Include'
                                     Value             = $platform
                                     RawValue          = $null
+                                    PolicyId          = $policy.PolicyId
                                 })
                             }
                         }
@@ -430,7 +453,6 @@ function Export-CAPReport {
                         foreach ($platform in ($policy.ExcludedPlatforms -split '; ')) {
                             if ($platform) {
                                 $detailData.Add([PSCustomObject]@{
-                                    PolicyId          = $policy.PolicyId
                                     PolicyDisplayName = $policy.DisplayName
                                     State             = $policy.State
                                     Classification    = $policy.Classification
@@ -439,6 +461,7 @@ function Export-CAPReport {
                                     Direction         = 'Exclude'
                                     Value             = $platform
                                     RawValue          = $null
+                                    PolicyId          = $policy.PolicyId
                                 })
                             }
                         }
@@ -449,7 +472,6 @@ function Export-CAPReport {
                         foreach ($control in ($policy.BuiltInControls -split '; ')) {
                             if ($control) {
                                 $detailData.Add([PSCustomObject]@{
-                                    PolicyId          = $policy.PolicyId
                                     PolicyDisplayName = $policy.DisplayName
                                     State             = $policy.State
                                     Classification    = $policy.Classification
@@ -458,6 +480,7 @@ function Export-CAPReport {
                                     Direction         = 'Require'
                                     Value             = $control
                                     RawValue          = $null
+                                    PolicyId          = $policy.PolicyId
                                 })
                             }
                         }
@@ -466,7 +489,6 @@ function Export-CAPReport {
                     # Authentication Strength
                     if ($policy.AuthenticationStrength) {
                         $detailData.Add([PSCustomObject]@{
-                            PolicyId          = $policy.PolicyId
                             PolicyDisplayName = $policy.DisplayName
                             State             = $policy.State
                             Classification    = $policy.Classification
@@ -475,6 +497,7 @@ function Export-CAPReport {
                             Direction         = 'Require'
                             Value             = $policy.AuthenticationStrength
                             RawValue          = if ($IncludeRawData) { $policy.AuthenticationStrengthId } else { $null }
+                            PolicyId          = $policy.PolicyId
                         })
                     }
                 }
@@ -487,7 +510,7 @@ function Export-CAPReport {
 
             # Remove RawValue column if not including raw data
             if (-not $IncludeRawData -and $detailData.Count -gt 0) {
-                $detailData = $detailData | Select-Object -Property PolicyId, PolicyDisplayName, State, Classification, RecordCategory, RecordType, Direction, Value
+                $detailData = $detailData | Select-Object -Property PolicyDisplayName, State, Classification, RecordCategory, RecordType, Direction, Value, PolicyId
             }
 
             # Export summary

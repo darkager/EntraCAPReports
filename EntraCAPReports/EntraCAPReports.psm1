@@ -110,6 +110,6 @@ $script:KnownRoleTemplateIds = @{
 
 # Export public functions
 Export-ModuleMember -Function @(
-    'Get-ConditionalAccessPolicy'
-    'Export-CAPReport'
+    'Get-EntraConditionalAccessPolicy'
+    'Export-EntraCAPReport'
 )

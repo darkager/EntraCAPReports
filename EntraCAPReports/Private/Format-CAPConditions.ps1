@@ -375,6 +375,16 @@ function Format-CAPSessionControls {
             $parts.Add('App-enforced restrictions')
         }
 
+        # Continuous Access Evaluation
+        $cae = $SessionControls.ContinuousAccessEvaluation
+        if ($null -ne $cae -and $null -ne $cae.Mode) {
+            switch ($cae.Mode) {
+                'strictEnforcement' { $parts.Add('CAE: strict enforcement') }
+                'disabled' { $parts.Add('CAE: disabled') }
+                default { $parts.Add("CAE: $($cae.Mode)") }
+            }
+        }
+
         # Disable resilience defaults
         if ($SessionControls.DisableResilienceDefaults -eq $true) {
             $parts.Add('Resilience defaults disabled')
@@ -470,6 +480,53 @@ function Format-CAPConditions {
         if ($null -ne $devices -and $null -ne $devices.DeviceFilter) {
             $mode = $devices.DeviceFilter.Mode
             $parts.Add("Device filter ($mode)")
+        }
+
+        # Authentication flows (device code flow, authentication transfer)
+        $authFlows = $Conditions.AuthenticationFlows
+        if ($null -ne $authFlows -and $authFlows.TransferMethods -and $authFlows.TransferMethods.Count -gt 0) {
+            $flowDescriptions = @{
+                'deviceCodeFlow'           = 'Device code flow'
+                'authenticationTransfer'   = 'Authentication transfer'
+            }
+            $flowNames = foreach ($method in $authFlows.TransferMethods) {
+                if ($flowDescriptions.ContainsKey($method)) {
+                    $flowDescriptions[$method]
+                }
+                else {
+                    $method
+                }
+            }
+            $parts.Add("Auth flows: $($flowNames -join ', ')")
+        }
+
+        # Client applications (workload identity / service principal targeting)
+        $clientApps = $Conditions.ClientApplications
+        if ($null -ne $clientApps) {
+            $hasIncludeSPs = ($clientApps.IncludeServicePrincipals -and $clientApps.IncludeServicePrincipals.Count -gt 0)
+            $hasExcludeSPs = ($clientApps.ExcludeServicePrincipals -and $clientApps.ExcludeServicePrincipals.Count -gt 0)
+            $hasSpFilter = ($null -ne $clientApps.ServicePrincipalFilter -and $null -ne $clientApps.ServicePrincipalFilter.Rule)
+
+            if ($hasIncludeSPs -or $hasExcludeSPs -or $hasSpFilter) {
+                $spParts = New-Object -TypeName 'System.Collections.Generic.List[String]'
+
+                if ($clientApps.IncludeServicePrincipals -contains 'ServicePrincipalsInMyTenant') {
+                    $spParts.Add('All service principals')
+                }
+                elseif ($hasIncludeSPs) {
+                    $spParts.Add("$($clientApps.IncludeServicePrincipals.Count) SP(s)")
+                }
+
+                if ($hasExcludeSPs) {
+                    $spParts.Add("excludes $($clientApps.ExcludeServicePrincipals.Count) SP(s)")
+                }
+
+                if ($hasSpFilter) {
+                    $spParts.Add('with filter')
+                }
+
+                $parts.Add("Workload identity: $($spParts -join ', ')")
+            }
         }
 
         if ($parts.Count -eq 0) {
